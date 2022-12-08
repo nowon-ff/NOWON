@@ -17,7 +17,6 @@
 
  header.header{
     padding: 60px;
-    background-image: url(../static/img/papel-parede.jpg);
     display: flex;
     height: 120px;
     min-width: 120px;

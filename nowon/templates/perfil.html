@@ -3,15 +3,26 @@
 <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
     <main role="main" class="inner cover">
         <h1 class="cover-heading">Área Usuário</h1>
+        <br>
+        <br>
         <p class="lead">
-            Olá, {{ user }}!
+            <!--<img src="{{user['profile-photo']}}"> <br>-->
+
+            Bem-vindo, {{ user['nome'] }}! <br>
+
+            Escolha a opção de analise abaixo<br>
         </p>
     </main>
 
-
+    <div class="buttons-home">
+        <form action="http://127.0.0.1:5000/analise_diaria">
+            <input class="btn btn-lg btn-primary" type="submit" value="Analise Diaria"/>
+        </form>
+    </div>
+<br><br><br>
     <div class="buttons-home">
         <form action="http://127.0.0.1:5000/logout">
-            <input class="btn btn-lg btn-primary" type="submit" value="Deslogar"/>
+            <input class="btn btn-lg btn-secondary" type="submit" value="Deslogar"/>
         </form>
     </div>
 </div>
