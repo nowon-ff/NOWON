@@ -5,6 +5,7 @@ from authlib.integrations.flask_client import OAuth
 import pandas as pd
 import random
 from datetime import date
+import datetime
 
 from Config_Inicial import config_var_flask
 config_var_flask()
@@ -81,20 +82,57 @@ def logout():
 
 @app.route("/analise_diaria")
 def analise_diaria():
-    df = pd.read_csv('../nowon/data/google_ads.csv')
-    conta_selecionada = random.choice(df['nome_conta'])
+    df = pd.read_csv('../nowon/data/humane_google_ads.csv')
+    lista_colunas_remover = ['Codigo da moeda','CTR','CPC medio','% de impr. (1ª posicao)',
+                             '% de impr. (parte sup.)','Conv. de visualizacao','Custo / conv.',
+                             'Conversoes','Taxa de conv.']
 
-    df_filtrado = df[df['nome_conta']==conta_selecionada]
+    lista_colunas_usar = [_ for _ in df.columns if _ not in lista_colunas_remover]
+    df = df[lista_colunas_usar]
+
+    lista_ori_col = [_ for _ in df.columns]
+    lista_pos_col = ['Date','nome_campanha','cliques','impressoes','investido',]
+
+    dic_col = {ori:pos for (ori,pos) in zip(lista_ori_col,lista_pos_col)}
+
+    df.rename(columns=dic_col, inplace=True)
+
+    df['conversoes'] = df['cliques'] / df['cliques'].max() * 10
+    df['interacoes'] = 0
+    df['impressoes'] = df['impressoes'] * 1000
     
-    dia = random.choice(range(2,7))
-    data_atual = f'{date.today().year}-{date.today().month}-{str(0)+str(dia)}'
-    data_antiga = f'{date.today().year}-{date.today().month}-{str(0)+str(dia-1)}'
+    df['impressoes'] = df['impressoes'].astype(int)
+    df['conversoes'] = df['conversoes'].astype(int)
 
-    df_atual = df_filtrado[df_filtrado['Date']==data_atual]
-    df_antigo = df_filtrado[df_filtrado['Date']==data_antiga]
+    df_filtrado = df.rename(columns=dic_col)
+    
+    def interar_n(s):
+        return int(s)
+
+    c_ano, c_mes, c_dia = map(interar_n,df['Date'].min().split("-"))
+    f_ano_, f_mes, f_dia = map(interar_n,df['Date'].max().split("-"))
+
+    start_date = datetime.date(c_ano, c_mes, c_dia+1)
+    end_date = datetime.date(f_ano_, f_mes, f_dia)
+
+    time_between_dates = end_date - start_date
+    days_between_dates = time_between_dates.days
+    random_number_of_days = random.randrange(days_between_dates)
+    data_final = start_date + datetime.timedelta(days=random_number_of_days)
+
+    data_atual = data_final
+    data_antiga = data_final - datetime.timedelta(days=1)
+
+    print(data_atual)
+
+    df_atual = df_filtrado[df_filtrado['Date']==str(data_atual)]
+    df_antigo = df_filtrado[df_filtrado['Date']==str(data_antiga)]
 
     obj_atual = df_atual[['impressoes','cliques','interacoes','conversoes','investido']].sum()
     obj_antigo = df_antigo[['impressoes','cliques','interacoes','conversoes','investido']].sum()
+
+    print(obj_atual)
+    print(obj_antigo)
 
     # CTR
     ctr_atual = obj_atual.cliques / obj_atual.impressoes
@@ -108,10 +146,13 @@ def analise_diaria():
         condicao_ctr = 'Diminuiu (⏬)'
     else:
         ctr_diff = 0
-        condicao_ctr = "Manteve"
+        condicao_ctr = "Manteve (🔄)"
 
     # CLIQUES
-    atual_primeiro_cliques = df_atual.groupby(by='nome_campanha').sum().sort_values(by='cliques',ascending=False).iloc[0] 
+    atual_primeiro_cliques = df_atual.groupby(by='nome_campanha').sum().sort_values(by='cliques',ascending=False).iloc[0]
+    if atual_primeiro_cliques.empty:
+        url_for(analise_diaria)
+
     nome_campanha = atual_primeiro_cliques.name
     atual_clique = atual_primeiro_cliques.cliques
 
@@ -127,7 +168,7 @@ def analise_diaria():
         condicao_clique = 'teve uma diminuição (⏬)'
     else:
         cliques_diff = 0
-        condicao_clique = "manteve a porcentagem"
+        condicao_clique = "manteve a porcentagem (🔄)"
 
     # CONVERSOES
     atual_conv = atual_primeiro_cliques.conversoes  
@@ -144,7 +185,7 @@ def analise_diaria():
     else:
         conv_diff_qtde = 0
         conv_diff_por = 0
-        condicao_conv = "manteve"
+        condicao_conv = "manteve (🔄)"
 
     # IMPRESSOES
     atual_imp = atual_primeiro_cliques.impressoes  
@@ -152,19 +193,19 @@ def analise_diaria():
 
     if atual_imp > antigo_imp:
         imp_diff_por = '{:.2f}'.format(((atual_imp / antigo_imp)-1)*100)
-        imp_diff_qtde = '{:.0f}'.format(atual_imp - antigo_imp)
+        imp_diff_qtde = '{}'.format(atual_imp - antigo_imp)
         condicao_imp = 'tiveram um aumento (⏫)'
     elif antigo_imp > atual_imp:
         imp_diff_por = '{:.2f}'.format(((atual_imp / antigo_imp)-1)*100)
-        imp_diff_qtde = '- {:.0f}'.format(antigo_imp - atual_imp)
+        imp_diff_qtde = '- {}'.format(antigo_imp - atual_imp)
         condicao_imp = 'tiveram uma diminuição (⏬)'
     else:
         imp_diff_por = 0
         imp_diff_qtde = 0
-        condicao_imp = "manteve"
+        condicao_imp = "manteve (🔄)"
 
     json_resp = {
-        'conta_selecionada' : conta_selecionada,
+        'conta_selecionada' : 'Humane',
         'data_atual' : data_atual,
         'data_antiga' : data_antiga,
         'ctr' : {

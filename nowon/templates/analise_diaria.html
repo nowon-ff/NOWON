@@ -2,7 +2,7 @@
 {% block conteudo %}
 <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
     <main role="main" class="inner cover">
-        <h3 class="cover-heading">Analise Diaria (DADOS MOCADOS)</h3>
+        <h3 class="cover-heading">Analise Diaria</h3>
         <br><br>
         <p class="lead">
             Olá, {{ user['nome'] }}!<br>
@@ -29,6 +29,11 @@
             </small>
         </div>
     </main>
+    <div class="buttons-home">
+        <form action="http://127.0.0.1:5000/analise_diaria">
+            <input class="btn btn-lg btn-secondary" type="submit" value="Analisar Outro Dia"/>
+        </form>
+    </div>
 </div>
 
 {% endblock %}
