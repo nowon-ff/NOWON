@@ -237,4 +237,5 @@ def analise_diaria():
                                                  json_resp=json_resp)
 
 
-app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
